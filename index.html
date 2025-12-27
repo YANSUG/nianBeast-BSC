@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧨 砲轟年獸：決戰初五 🧨</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+    <style>
+        body {
+            background-color: #2b0000;
+            background-image: radial-gradient(circle at center, #500000 0%, #1a0000 100%);
+            color: #FFD700;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 20px;
+            border: 3px solid #FF4500;
+            box-shadow: 0 0 50px rgba(255, 69, 0, 0.4);
+        }
+        h1 { margin-top: 0; text-shadow: 0 0 10px #FF4500; font-size: 32px; }
+        
+        /* 年獸血條區 (已修復藍色破圖) */
+        .boss-section {
+            margin: 20px 0;
+            padding: 20px;
+            /* 🔴 改用紅黑漸層背景，避免圖片失效導致破圖 */
+            background: linear-gradient(135deg, #330000 0%, #800000 50%, #330000 100%);
+            /* 如果你有新的年獸圖片，請將下面這行解除註解並填入網址 */
+            /* background-image: url('https://你的圖片網址.png'); */
+            
+            background-size: cover;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            position: relative;
+            min-height: 200px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+        .boss-hp {
+            font-size: 40px; font-weight: bold; color: #FFF;
+            text-shadow: 0 0 20px #FF0000, 0 0 10px #FF0000;
+            margin: 10px 0;
+        }
+        .hp-label { font-size: 16px; color: #FFD700; margin-bottom: 5px; }
+        
+        /* 倒數計時 */
+        .timer-box {
+            background: #000; color: #FF0000; font-family: monospace;
+            font-size: 24px; padding: 10px 20px; border-radius: 10px;
+            border: 1px solid #FF0000; margin-top: 15px;
+            display: inline-block;
+        }
+
+        /* 攻擊按鈕區 */
+        .attack-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0;
+        }
+        .atk-btn {
+            background: linear-gradient(180deg, #ff6b6b, #c0392b);
+            border: 2px solid #fff; color: white; padding: 15px;
+            border-radius: 15px; cursor: pointer; transition: transform 0.1s;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .atk-btn:active { transform: scale(0.95); }
+        .atk-btn:hover { box-shadow: 0 0 15px #ff6b6b; border-color: #FFD700; }
+        .atk-cost { font-size: 20px; font-weight: bold; }
+        .atk-desc { font-size: 12px; margin-top: 5px; color: #eee; }
+
+        /* 分紅區 */
+        .dividend-panel {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            padding: 15px; border-radius: 15px;
+            margin-top: 20px;
+        }
+        .claim-btn {
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            border: none; padding: 10px 20px; color: #500000; font-weight: bold;
+            border-radius: 30px; cursor: pointer; margin-top: 10px;
+            font-size: 16px;
+        }
+        .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #FFD700; }
+        
+        /* 資訊列 */
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #ccc; }
+        .highlight { color: #00FF00; font-weight: bold; }
+        .winner-addr { color: #00FFFF; font-family: monospace; font-weight: bold;}
+
+        /* Owner 面板 */
+        .admin-panel {
+            margin-top: 40px; padding: 15px; border: 1px dashed #FF4444; border-radius: 10px;
+            display: none; /* 預設隱藏 */
+            background: rgba(50, 0, 0, 0.5);
+        }
+        .fuse-btn {
+            background: #800000; color: #fff; border: 1px solid red;
+            padding: 8px 15px; cursor: pointer; border-radius: 5px; margin-top: 10px;
+        }
+        .fuse-btn:hover { background: red; }
+
+        /* 連結錢包按鈕 */
+        #connectBtn {
+            background: linear-gradient(90deg, #333, #555); color: white;
+            border: 1px solid #aaa; padding: 10px 25px; border-radius: 50px;
+            cursor: pointer; font-size: 16px; margin-top: 20px;
+        }
+        #connectBtn:hover { border-color: #fff; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧨 砲轟年獸：決戰初五</h1>
+    
+    <p style="color:#aaa; font-size:14px; line-height: 1.6;">
+        集全網之力擊殺年獸！<br>
+        最後一擊獨得 <span style="color:#FFD700">80%</span> 獎池，其餘 <span style="color:#00FF00">20%</span> 保留為下輪底池！
+    </p>
+
+    <div class="boss-section">
+        <div class="hp-label">👹 年獸血量 (累積獎池)</div>
+        <div class="boss-hp"><span id="poolBalance">0.0000</span> BNB</div>
+        
+        <div class="timer-box">
+            🔥 倒數: <span id="timeLeft">--:--:--</span>
+        </div>
+        
+        <div style="margin-top:15px; font-size:14px; background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:20px;">
+            ⚔️ 目前贏家 (Last Hit): <span id="lastAttacker" class="winner-addr">等待勇者...</span>
+        </div>
+    </div>
+
+    <div class="attack-grid">
+        <button class="atk-btn" onclick="attack('0.001')">
+            <div class="atk-cost">🧨 0.001 BNB</div>
+            <div class="atk-desc">重置為 1 小時</div>
+        </button>
+        <button class="atk-btn" onclick="attack('0.01')">
+            <div class="atk-cost">💣 0.01 BNB</div>
+            <div class="atk-desc">重置為 30 分鐘</div>
+        </button>
+        <button class="atk-btn" onclick="attack('0.1')">
+            <div class="atk-cost">🚀 0.1 BNB</div>
+            <div class="atk-desc">重置為 15 分鐘</div>
+        </button>
+        <button class="atk-btn" onclick="attack('1')">
+            <div class="atk-cost">☢️ 1 BNB</div>
+            <div class="atk-desc">重置為 5 分鐘 (極速)</div>
+        </button>
+    </div>
+
+    <div class="dividend-panel">
+        <div class="info-row">
+            <span>💰 我的累積份額 (Shares):</span>
+            <span class="highlight" id="myShares">0 BNB</span>
+        </div>
+        <div class="info-row">
+            <span>💎 當前可領分紅:</span>
+            <span class="highlight" id="myDividends">0.0000 BNB</span>
+        </div>
+        <button class="claim-btn" onclick="claim()">🤑 領取分紅 (Claim)</button>
+    </div>
+
+    <div id="settleArea" style="margin-top:20px; display:none;">
+        <button onclick="settleGame()" style="background:#00AA00; color:white; border:2px solid #00FF00; padding:15px 30px; font-weight:bold; cursor:pointer; font-size:18px; border-radius:10px; box-shadow:0 0 15px #00FF00;">
+            🏆 時間到！點擊結算發獎 (開啟下一年)
+        </button>
+    </div>
+
+    <button id="connectBtn" onclick="connectWallet()">🦊 連結錢包</button>
+
+    <div id="adminPanel" class="admin-panel">
+        <div style="color:#FF4444; font-weight:bold; margin-bottom:10px;">👑 管理員控制台 (Owner Only)</div>
+        <div style="font-size:12px; color:#aaa; margin-bottom:10px;">
+            如果遊戲發生異常或需永久停止，可使用保險絲。<br>
+            這將發放獎金給贏家，回收獎池給 Owner，並保留玩家分紅。
+        </div>
+        <button class="fuse-btn" onclick="triggerFuse()">☠️ 啟動保險絲 (強制熔斷)</button>
+    </div>
+</div>
+
+<script>
+    // ✅ 合約地址保持不變
+    const NIAN_ADDRESS = "0x049f1f2F1399BAE97B2576CA70A8EEF148a7d5B8";
+    
+    // V5 ABI
+    const ABI = [
+        "function attack() external payable",
+        "function settleGame() external",
+        "function claimDividend() external",
+        "function triggerFuse() external",
+        "function nianHp() view returns (uint256)",
+        "function getTimeLeft() view returns (uint256)",
+        "function lastAttacker() view returns (address)",
+        "function getPendingDividend(address) view returns (uint256)",
+        "function players(address) view returns (uint256, uint256, uint256)",
+        "function isGameOver() view returns (bool)",
+        "function owner() view returns (address)"
+    ];
+
+    let provider, signer, contract;
+    let updateTimer;
+
+    async function connectWallet() {
+        if (!window.ethereum) return alert("請安裝 MetaMask");
+        try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            const addr = await signer.getAddress();
+            
+            document.getElementById("connectBtn").innerText = "✅ 已連結: " + addr.substring(0,6) + "...";
+            document.getElementById("connectBtn").disabled = true;
+            
+            contract = new ethers.Contract(NIAN_ADDRESS, ABI, signer);
+            
+            const ownerAddr = await contract.owner();
+            if (addr.toLowerCase() === ownerAddr.toLowerCase()) {
+                document.getElementById("adminPanel").style.display = "block";
+            }
+
+            updateUI(addr);
+            if (updateTimer) clearInterval(updateTimer);
+            updateTimer = setInterval(() => updateUI(addr), 3000);
+
+        } catch (e) { console.error(e); alert("連結失敗: " + e.message); }
+    }
+
+    async function updateUI(addr) {
+        if(!contract) return;
+        try {
+            const hp = await contract.nianHp();
+            document.getElementById("poolBalance").innerText = parseFloat(ethers.utils.formatEther(hp)).toFixed(4);
+
+            const timeLeft = await contract.getTimeLeft();
+            updateTimerDisplay(timeLeft.toNumber());
+
+            const last = await contract.lastAttacker();
+            if (last === "0x0000000000000000000000000000000000000000") {
+                document.getElementById("lastAttacker").innerText = "等待首位勇者...";
+            } else {
+                document.getElementById("lastAttacker").innerText = last.substring(0,6) + "..." + last.substring(38);
+            }
+
+            const pending = await contract.getPendingDividend(addr);
+            document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pending)).toFixed(6) + " BNB";
+            
+            const playerData = await contract.players(addr);
+            document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(playerData[0])).toFixed(3) + " BNB";
+
+            const isOver = await contract.isGameOver();
+            if (!isOver && timeLeft.toNumber() === 0 && hp.gt(0)) {
+                document.getElementById("settleArea").style.display = "block";
+            } else {
+                document.getElementById("settleArea").style.display = "none";
+            }
+
+        } catch (e) { console.error("UI Update Error:", e); }
+    }
+
+    function updateTimerDisplay(seconds) {
+        if (seconds <= 0) {
+            document.getElementById("timeLeft").innerText = "00:00:00";
+            document.getElementById("timeLeft").style.color = "#FF4444";
+            return;
+        }
+        const h = Math.floor(seconds / 3600).toString().padStart(2,'0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2,'0');
+        const s = (seconds % 60).toString().padStart(2,'0');
+        document.getElementById("timeLeft").innerText = `${h}:${m}:${s}`;
+        document.getElementById("timeLeft").style.color = "#FF0000";
+    }
+
+    async function attack(bnbAmount) {
+        if(!contract) return;
+        try {
+            const tx = await contract.attack({ value: ethers.utils.parseEther(bnbAmount) });
+            await tx.wait();
+            updateUI(await signer.getAddress());
+        } catch (e) {
+            alert("攻擊失敗：" + (e.data?.message || e.message));
+        }
+    }
+
+    async function claim() {
+        if(!contract) return;
+        try {
+            const tx = await contract.claimDividend();
+            await tx.wait();
+            alert("💰 領取成功！");
+            updateUI(await signer.getAddress());
+        } catch (e) {
+            alert("領取失敗 (可能無分紅可領)：" + (e.data?.message || e.message));
+        }
+    }
+
+    async function settleGame() {
+        if(!contract) return;
+        try {
+            const tx = await contract.settleGame();
+            await tx.wait();
+            alert("🏆 遊戲結算完成！贏家已獲得獎勵，新的一年開始了！");
+        } catch (e) {
+            alert("結算失敗：" + (e.data?.message || e.message));
+        }
+    }
+
+    async function triggerFuse() {
+        if(!confirm("⚠️⚠️ 警告：保險絲熔斷是不可逆的操作！\n\n這將會：\n1. 永久結束遊戲\n2. 發放獎金給贏家\n3. 將剩餘獎池轉回 Owner 錢包\n\n確定要執行嗎？")) return;
+        try {
+            const tx = await contract.triggerFuse();
+            await tx.wait();
+            alert("🔒 保險絲已啟動。遊戲已安全終止。");
+        } catch (e) {
+            alert("熔斷失敗：" + (e.data?.message || e.message));
+        }
+    }
+</script>
+
+</body>
+</html>
