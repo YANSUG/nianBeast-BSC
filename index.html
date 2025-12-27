@@ -24,9 +24,18 @@
             border-radius: 20px;
             border: 3px solid #FF4500;
             box-shadow: 0 0 50px rgba(255, 69, 0, 0.4);
+            position: relative;
         }
         h1 { margin-top: 0; text-shadow: 0 0 10px #FF4500; font-size: 32px; }
         
+        /* 規則按鈕 */
+        .rules-btn-top {
+            background: transparent; border: 1px solid #FFD700; color: #FFD700;
+            padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px;
+            margin-bottom: 15px; transition: all 0.2s;
+        }
+        .rules-btn-top:hover { background: rgba(255, 215, 0, 0.2); }
+
         .boss-section {
             margin: 20px 0;
             padding: 20px;
@@ -46,7 +55,6 @@
         }
         .hp-label { font-size: 16px; color: #FFD700; margin-bottom: 5px; }
         
-        /* 倒數計時區 */
         .timers-container {
             display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;
         }
@@ -105,12 +113,30 @@
             cursor: pointer; font-size: 16px; margin-top: 20px;
         }
         #connectBtn:hover { border-color: #fff; }
+
+        /* --- Modal 彈窗樣式 --- */
+        .modal {
+            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #300000; border: 2px solid #FFD700; margin: 10% auto; padding: 25px;
+            width: 85%; max-width: 500px; border-radius: 15px; text-align: left;
+            box-shadow: 0 0 30px #FFD700; max-height: 80vh; overflow-y: auto; color: #eee;
+        }
+        .close-btn { float: right; font-size: 32px; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: #fff; }
+        .rules-title { color: #FFD700; border-bottom: 1px dashed #555; padding-bottom: 10px; margin-top: 0; text-align: center; }
+        .rule-item { margin-bottom: 15px; line-height: 1.6; font-size: 15px; }
+        .rule-icon { color: #FF4500; font-weight: bold; font-size: 18px; margin-right: 5px; }
+
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🧨 砲轟年獸：決戰初五</h1>
+    <button class="rules-btn-top" onclick="openRules()">📜 查看遊戲規則</button>
     
     <p style="color:#aaa; font-size:14px; line-height: 1.6;">
         集全網之力擊殺年獸！<br>
@@ -187,10 +213,49 @@
     </div>
 </div>
 
+<div id="rulesModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeRules()">&times;</span>
+        <h2 class="rules-title">📜 討伐年獸攻略</h2>
+        
+        <div class="rule-item">
+            <span class="rule-icon">⚔️</span> <strong>核心玩法 (搶尾刀)</strong><br>
+            當「戰鬥倒數」歸零，或「強制開工」時間到達時，<span style="color:#FFD700">最後一位攻擊者</span> 視為擊殺年獸，獨得 <span style="color:#FFD700">80%</span> 大獎池！
+        </div>
+
+        <div class="rule-item">
+            <span class="rule-icon">💰</span> <strong>資金流向</strong><br>
+            您的攻擊金額分配：
+            <ul>
+                <li><strong>80%</strong>：進入年獸血量 (累積獎池)。</li>
+                <li><strong>20%</strong>：全網分紅 (按份額分配給所有玩家)。</li>
+            </ul>
+        </div>
+
+        <div class="rule-item">
+            <span class="rule-icon">⏳</span> <strong>時間重置機制</strong><br>
+            攻擊金額越高，倒數時間越短 (戰局越刺激)：<br>
+            🧨 0.001 BNB &rarr; 重置為 1 小時<br>
+            💣 0.01 BNB &rarr; 重置為 30 分鐘<br>
+            🚀 0.1 BNB &rarr; 重置為 15 分鐘<br>
+            ☢️ 1.0 BNB &rarr; 重置為 5 分鐘
+        </div>
+
+        <div class="rule-item">
+            <span class="rule-icon">📅</span> <strong>強制開工日</strong><br>
+            無論戰況如何，每年 <span style="color:#00FFFF">農曆初五中午 12:00</span> 強制結算。當下的最後攻擊者獲勝，遊戲自動進入下一年。
+        </div>
+
+        <div class="rule-item" style="color:#aaa; font-size:12px; border-top:1px solid #555; padding-top:10px;">
+            * 結算後，獎池的 20% 將保留為下一年的底池。<br>
+            * 遊戲內建 12 年自動輪迴機制，永續運作。
+        </div>
+    </div>
+</div>
+
 <script>
     const NIAN_ADDRESS = "0x049f1f2F1399BAE97B2576CA70A8EEF148a7d5B8";
     
-    // 更新 ABI，加入 deadline, hardDeadline 變數讀取
     const ABI = [
         "function attack() external payable",
         "function settleGame() external",
@@ -202,15 +267,14 @@
         "function players(address) view returns (uint256, uint256, uint256)",
         "function isGameOver() view returns (bool)",
         "function owner() view returns (address)",
-        "function deadline() view returns (uint256)",      // 軟倒數時間戳
-        "function hardDeadline() view returns (uint256)"  // 硬死線時間戳
+        "function deadline() view returns (uint256)",
+        "function hardDeadline() view returns (uint256)"
     ];
 
     let provider, signer, contract;
     let blockchainTimer;
     let localTicker;
     
-    // 儲存全域的截止時間戳 (秒)
     let targetSoftDeadline = 0;
     let targetHardDeadline = 0;
 
@@ -232,35 +296,28 @@
                 document.getElementById("adminPanel").style.display = "block";
             }
 
-            // 立即執行一次
             await updateBlockchainData(addr);
             
-            // 啟動區塊鏈數據更新 (每5秒更新一次數據，不負責倒數)
             if (blockchainTimer) clearInterval(blockchainTimer);
             blockchainTimer = setInterval(() => updateBlockchainData(addr), 5000);
 
-            // 啟動本地倒數計時器 (每1秒更新畫面，負責倒數)
             if (localTicker) clearInterval(localTicker);
             localTicker = setInterval(updateLocalTimers, 1000);
 
         } catch (e) { console.error(e); alert("連結失敗: " + e.message); }
     }
 
-    // 負責從區塊鏈抓取最新狀態
     async function updateBlockchainData(addr) {
         if(!contract) return;
         try {
-            // 1. 讀取血量
             const hp = await contract.nianHp();
             document.getElementById("poolBalance").innerText = parseFloat(ethers.utils.formatEther(hp)).toFixed(4);
 
-            // 2. 讀取時間戳 (絕對時間)
             const softDL = await contract.deadline();
             const hardDL = await contract.hardDeadline();
             targetSoftDeadline = softDL.toNumber();
             targetHardDeadline = hardDL.toNumber();
 
-            // 3. 讀取贏家
             const last = await contract.lastAttacker();
             if (last === "0x0000000000000000000000000000000000000000") {
                 document.getElementById("lastAttacker").innerText = "等待首位勇者...";
@@ -268,22 +325,17 @@
                 document.getElementById("lastAttacker").innerText = last.substring(0,6) + "..." + last.substring(38);
             }
 
-            // 4. 讀取分紅與錢包餘額
             const pending = await contract.getPendingDividend(addr);
             document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pending)).toFixed(6) + " BNB";
             
             const playerData = await contract.players(addr);
             document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(playerData[0])).toFixed(3) + " BNB";
 
-            // 🆕 讀取錢包餘額
             const balance = await provider.getBalance(addr);
             document.getElementById("myWalletBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4) + " BNB";
 
-            // 5. 判斷結束
             const isOver = await contract.isGameOver();
             const now = Math.floor(Date.now() / 1000);
-            
-            // 如果軟時間或硬時間已到
             const timeUp = (now >= targetSoftDeadline || now >= targetHardDeadline);
             
             if (!isOver && timeUp && hp.gt(0)) {
@@ -295,19 +347,14 @@
         } catch (e) { console.error("Update Error:", e); }
     }
 
-    // 純粹負責前端倒數顯示 (流暢不卡頓)
     function updateLocalTimers() {
         const now = Math.floor(Date.now() / 1000);
-
-        // 更新軟倒數
         if (targetSoftDeadline > 0) {
             const diffSoft = targetSoftDeadline - now;
             document.getElementById("softTimer").innerText = formatTime(diffSoft);
             if(diffSoft <= 0) document.getElementById("softTimer").style.color = "#FF4444";
             else document.getElementById("softTimer").style.color = "#FF0000";
         }
-
-        // 更新硬倒數
         if (targetHardDeadline > 0) {
             const diffHard = targetHardDeadline - now;
             document.getElementById("hardTimer").innerText = formatTime(diffHard);
@@ -329,10 +376,8 @@
         if(!contract) return;
         try {
             const tx = await contract.attack({ value: ethers.utils.parseEther(bnbAmount) });
-            // 立即反饋 UI
             document.getElementById("softTimer").innerText = "確認中...";
             await tx.wait();
-            // 交易確認後立即更新數據
             updateBlockchainData(await signer.getAddress());
         } catch (e) {
             alert("攻擊失敗：" + (e.data?.message || e.message));
@@ -373,7 +418,17 @@
             alert("熔斷失敗：" + (e.data?.message || e.message));
         }
     }
+
+    // Modal Control
+    function openRules() { document.getElementById("rulesModal").style.display = "block"; }
+    function closeRules() { document.getElementById("rulesModal").style.display = "none"; }
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("rulesModal")) {
+            closeRules();
+        }
+    }
 </script>
 
 </body>
 </html>
+
