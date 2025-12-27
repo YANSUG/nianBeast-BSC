@@ -3,258 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧨 砲轟年獸：決戰初五 🧨</title>
+    <title>🧨 砲轟年獸：決戰初五 (V7)</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --gold: #FFD700;
+            --red: #D90429;
+            --dark-red: #2b0505;
+            --bg-gradient: radial-gradient(circle at center, #4a0000 0%, #1a0000 100%);
+            --glass: rgba(0, 0, 0, 0.6);
+            --border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
         body {
-            background-color: #2b0000;
-            background-image: radial-gradient(circle at center, #500000 0%, #1a0000 100%);
-            color: #FFD700;
-            font-family: 'Microsoft JhengHei', sans-serif;
-            text-align: center;
-            padding: 20px;
+            background: var(--bg-gradient);
+            color: var(--gold);
+            font-family: 'Noto Sans TC', sans-serif;
             margin: 0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 30px;
-            border-radius: 20px;
-            border: 3px solid #FF4500;
-            box-shadow: 0 0 50px rgba(255, 69, 0, 0.4);
-            position: relative;
-        }
-        h1 { margin-top: 0; text-shadow: 0 0 10px #FF4500; font-size: 32px; }
-        
-        /* 規則按鈕 */
-        .rules-btn-top {
-            background: transparent; border: 1px solid #FFD700; color: #FFD700;
-            padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 14px;
-            margin-bottom: 15px; transition: all 0.2s;
-        }
-        .rules-btn-top:hover { background: rgba(255, 215, 0, 0.2); }
-
-        .boss-section {
-            margin: 20px 0;
             padding: 20px;
-            background: linear-gradient(135deg, #330000 0%, #800000 50%, #330000 100%);
-            background-size: cover;
-            border-radius: 15px;
-            border: 2px solid #FFD700;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 2px solid var(--red);
+            box-shadow: 0 0 60px rgba(217, 4, 41, 0.2);
+            padding: 30px;
             position: relative;
-            min-height: 200px;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
         }
-        .boss-hp {
-            font-size: 40px; font-weight: bold; color: #FFF;
-            text-shadow: 0 0 20px #FF0000, 0 0 10px #FF0000;
-            margin: 10px 0;
-        }
-        .hp-label { font-size: 16px; color: #FFD700; margin-bottom: 5px; }
-        
-        .timers-container {
-            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 15px;
-        }
-        .timer-box {
-            background: #000; color: #FF0000; font-family: monospace;
-            font-size: 20px; padding: 10px 15px; border-radius: 10px;
-            border: 1px solid #FF0000; min-width: 200px;
-        }
-        .timer-label { font-size: 12px; color: #aaa; margin-bottom: 2px; display: block; }
-        .hard-timer { border-color: #00FFFF; color: #00FFFF; }
 
+        /* 標題區 */
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+        }
+        h1 { margin: 0; font-size: 28px; text-shadow: 0 0 15px var(--red); letter-spacing: 2px; }
+        .subtitle { color: #aaa; font-size: 13px; margin-top: 5px; line-height: 1.5; }
+        .highlight { color: #00FFFF; font-weight: bold; }
+        
+        /* 按鈕共用樣式 */
+        button { font-family: 'Noto Sans TC', sans-serif; transition: all 0.3s ease; }
+        .rules-btn {
+            background: rgba(255, 215, 0, 0.1); border: 1px solid var(--gold); color: var(--gold);
+            padding: 6px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-top: 10px;
+        }
+        .rules-btn:hover { background: var(--gold); color: #000; }
+
+        /* Boss 區塊 (核心) */
+        .boss-card {
+            background: linear-gradient(135deg, #3a0000 0%, #150000 100%);
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        
+        /* 終局模式特效 */
+        .boss-card.endgame-mode {
+            border-color: #FF0000;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.4), inset 0 0 30px rgba(50, 0, 0, 0.8);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border { 0% { border-color: #ff0000; } 50% { border-color: #ff8800; } 100% { border-color: #ff0000; } }
+
+        .pool-title { font-size: 14px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .pool-val { font-family: 'Roboto Mono', monospace; font-size: 36px; font-weight: 700; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); margin: 5px 0 15px 0; }
+
+        /* 計時器 */
+        .timers-row { display: flex; gap: 10px; justify-content: center; }
+        .timer-badge {
+            background: rgba(0,0,0,0.6); border: 1px solid #555; padding: 8px 12px; border-radius: 8px; flex: 1;
+        }
+        .timer-badge.hard { border-color: #00FFFF; color: #00FFFF; }
+        .timer-badge.soft { border-color: #FF4444; color: #FF4444; }
+        .t-label { font-size: 10px; display: block; opacity: 0.8; margin-bottom: 2px; }
+        .t-val { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: bold; }
+
+        .last-hit { margin-top: 15px; font-size: 13px; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 20px; }
+
+        /* 攻擊區塊 */
         .attack-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 30px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 預設兩欄 */
+            gap: 15px;
+            margin-bottom: 25px;
+            transition: all 0.5s ease; /* 版面切換動畫 */
         }
-        .atk-btn {
-            background: linear-gradient(180deg, #ff6b6b, #c0392b);
-            border: 2px solid #fff; color: white; padding: 15px;
-            border-radius: 15px; cursor: pointer; transition: transform 0.1s;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .atk-btn:active { transform: scale(0.95); }
-        .atk-btn:hover { box-shadow: 0 0 15px #ff6b6b; border-color: #FFD700; }
-        .atk-cost { font-size: 20px; font-weight: bold; }
-        .atk-desc { font-size: 12px; margin-top: 5px; color: #eee; }
-
-        .dividend-panel {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid #FFD700;
-            padding: 15px; border-radius: 15px;
-            margin-top: 20px;
-        }
-        .claim-btn {
-            background: linear-gradient(90deg, #FFD700, #FFA500);
-            border: none; padding: 10px 20px; color: #500000; font-weight: bold;
-            border-radius: 30px; cursor: pointer; margin-top: 10px; font-size: 16px;
-        }
-        .claim-btn:hover { transform: scale(1.05); box-shadow: 0 0 10px #FFD700; }
         
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #ccc; }
-        .highlight { color: #00FF00; font-weight: bold; }
-        .winner-addr { color: #00FFFF; font-family: monospace; font-weight: bold;}
-
-        .admin-panel {
-            margin-top: 40px; padding: 15px; border: 1px dashed #FF4444; border-radius: 10px;
-            display: none; background: rgba(50, 0, 0, 0.5);
+        /* 終局模式：變為單欄，且只顯示唯一按鈕 */
+        .attack-grid.single-mode {
+            grid-template-columns: 1fr;
         }
-        .fuse-btn {
-            background: #800000; color: #fff; border: 1px solid red;
-            padding: 8px 15px; cursor: pointer; border-radius: 5px; margin-top: 10px;
-        }
-        .fuse-btn:hover { background: red; }
 
+        .atk-btn {
+            background: linear-gradient(180deg, #444, #222);
+            border: 1px solid #666;
+            color: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .atk-btn:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .atk-btn:active { transform: scale(0.98); }
+
+        /* 0.01 BNB 特效按鈕 (終局用) */
+        .atk-btn.special-mode {
+            background: linear-gradient(135deg, #D90429 0%, #8d0801 100%);
+            border: 2px solid #FFD700;
+            box-shadow: 0 0 20px rgba(217, 4, 41, 0.4);
+            grid-column: 1 / -1; /* 強制跨滿整行 */
+            padding: 25px; /* 加大 */
+        }
+        .atk-btn.special-mode .cost { font-size: 28px; color: #FFD700; }
+        .atk-btn.special-mode .desc { font-size: 16px; color: #fff; font-weight: bold; }
+
+        .cost { font-size: 18px; font-weight: bold; font-family: 'Roboto Mono'; }
+        .desc { font-size: 12px; margin-top: 4px; color: #aaa; }
+
+        /* 數據與分紅 */
+        .stats-panel { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; margin-bottom: 20px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: #ccc; }
+        .stat-val { color: var(--gold); font-family: 'Roboto Mono'; }
+
+        .claim-btn {
+            width: 100%; background: linear-gradient(90deg, #FFD700, #FFA500);
+            border: none; color: #4a0000; font-weight: bold; font-size: 16px;
+            padding: 12px; border-radius: 50px; cursor: pointer;
+        }
+        .claim-btn:hover { filter: brightness(1.1); box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+
+        /* 底部操作 */
+        .footer-actions { text-align: center; margin-top: 20px; }
         #connectBtn {
-            background: linear-gradient(90deg, #333, #555); color: white;
-            border: 1px solid #aaa; padding: 10px 25px; border-radius: 50px;
-            cursor: pointer; font-size: 16px; margin-top: 20px;
+            background: #333; color: #fff; border: 1px solid #555;
+            padding: 10px 25px; border-radius: 30px; cursor: pointer;
         }
-        #connectBtn:hover { border-color: #fff; }
+        
+        .settle-btn {
+            width: 100%; background: #06d6a0; color: #000; font-weight: bold; border: none;
+            padding: 15px; border-radius: 12px; font-size: 18px; cursor: pointer;
+            animation: pulse-green 2s infinite; margin-top: 10px;
+            display: none; /* 預設隱藏 */
+        }
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(6, 214, 160, 0); } 100% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0); } }
 
-        /* --- Modal 彈窗樣式 --- */
-        .modal {
-            display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+        /* 狀態標籤 */
+        .status-badge {
+            position: absolute; top: 10px; right: 10px;
+            background: #FF0000; color: #fff; font-size: 11px; padding: 4px 8px;
+            border-radius: 4px; display: none; font-weight: bold;
+            box-shadow: 0 0 10px #FF0000;
         }
-        .modal-content {
-            background: #300000; border: 2px solid #FFD700; margin: 10% auto; padding: 25px;
-            width: 85%; max-width: 500px; border-radius: 15px; text-align: left;
-            box-shadow: 0 0 30px #FFD700; max-height: 80vh; overflow-y: auto; color: #eee;
-        }
-        .close-btn { float: right; font-size: 32px; cursor: pointer; color: #aaa; }
-        .close-btn:hover { color: #fff; }
-        .rules-title { color: #FFD700; border-bottom: 1px dashed #555; padding-bottom: 10px; margin-top: 0; text-align: center; }
-        .rule-item { margin-bottom: 15px; line-height: 1.6; font-size: 15px; }
-        .rule-icon { color: #FF4500; font-weight: bold; font-size: 18px; margin-right: 5px; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+        .modal-content { background: #222; border: 1px solid var(--gold); margin: 10% auto; padding: 25px; width: 85%; max-width: 450px; border-radius: 15px; text-align: left; color: #eee; position: relative;}
+        .close { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #aaa; }
+        .rule-row { margin-bottom: 12px; font-size: 14px; line-height: 1.5; border-bottom: 1px solid #333; padding-bottom: 8px; }
+
+        /* Owner Panel */
+        .admin-panel { margin-top: 20px; padding: 10px; border: 1px dashed #555; display: none; text-align: center; }
+        .fuse-btn { background: #500; color: #fff; border: 1px solid red; padding: 5px 15px; cursor: pointer; border-radius: 4px; }
 
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🧨 砲轟年獸：決戰初五</h1>
-    <button class="rules-btn-top" onclick="openRules()">📜 查看遊戲規則</button>
-    
-    <p style="color:#aaa; font-size:14px; line-height: 1.6;">
-        集全網之力擊殺年獸！<br>
-        最後一擊獨得 <span style="color:#FFD700">80%</span> 獎池，其餘 <span style="color:#00FF00">20%</span> 保留為下輪底池！
-    </p>
+    <header>
+        <h1>🧨 砲轟年獸 V7</h1>
+        <div class="subtitle">
+            擊殺者得 80% 獎池<br>
+            <span class="highlight">強制開工日</span> 觸發 60% 全網紅包
+        </div>
+        <button class="rules-btn" onclick="openModal()">📜 規則說明</button>
+    </header>
 
-    <div class="boss-section">
-        <div class="hp-label">👹 年獸血量 (累積獎池)</div>
-        <div class="boss-hp"><span id="poolBalance">0.0000</span> BNB</div>
+    <div class="boss-card" id="bossCard">
+        <div id="endgameBadge" class="status-badge">🧧 終局模式啟動</div>
         
-        <div class="timers-container">
-            <div class="timer-box">
-                <span class="timer-label">🔥 戰鬥倒數 (重置型)</span>
-                <span id="softTimer">--:--:--</span>
+        <div class="pool-title">當前累積獎池</div>
+        <div class="pool-val"><span id="poolBalance">0.0000</span> <span style="font-size:16px">BNB</span></div>
+
+        <div class="timers-row">
+            <div class="timer-badge soft">
+                <span class="t-label">🔥 戰鬥倒數 (重置)</span>
+                <span class="t-val" id="softTimer">--:--:--</span>
             </div>
-            <div class="timer-box hard-timer">
-                <span class="timer-label">📅 強制開工 (固定)</span>
-                <span id="hardTimer">--:--:--</span>
+            <div class="timer-badge hard">
+                <span class="t-label">📅 強制開工 (固定)</span>
+                <span class="t-val" id="hardTimer">--:--:--</span>
             </div>
         </div>
+
+        <div class="last-hit">
+            ⚔️ 上一位勇者: <span id="lastAttacker" style="color:#00FFFF; font-family:monospace">---</span>
+        </div>
+    </div>
+
+    <div class="attack-grid" id="attackGrid">
+        <button class="atk-btn" id="btn_0001" onclick="attack('0.001')">
+            <span class="cost">0.001 BNB</span>
+            <span class="desc">重置 1 小時</span>
+        </button>
         
-        <div style="margin-top:15px; font-size:14px; background:rgba(0,0,0,0.6); padding:5px 10px; border-radius:20px;">
-            ⚔️ 目前贏家 (Last Hit): <span id="lastAttacker" class="winner-addr">等待勇者...</span>
-        </div>
-    </div>
+        <button class="atk-btn" id="btn_001" onclick="attack('0.01')">
+            <span class="cost">0.01 BNB</span>
+            <span class="desc" id="desc_001">重置 30 分鐘</span>
+        </button>
 
-    <div class="attack-grid">
-        <button class="atk-btn" onclick="attack('0.001')">
-            <div class="atk-cost">🧨 0.001 BNB</div>
-            <div class="atk-desc">重置為 1 小時</div>
+        <button class="atk-btn" id="btn_01" onclick="attack('0.1')">
+            <span class="cost">0.1 BNB</span>
+            <span class="desc">重置 15 分鐘</span>
         </button>
-        <button class="atk-btn" onclick="attack('0.01')">
-            <div class="atk-cost">💣 0.01 BNB</div>
-            <div class="atk-desc">重置為 30 分鐘</div>
-        </button>
-        <button class="atk-btn" onclick="attack('0.1')">
-            <div class="atk-cost">🚀 0.1 BNB</div>
-            <div class="atk-desc">重置為 15 分鐘</div>
-        </button>
-        <button class="atk-btn" onclick="attack('1')">
-            <div class="atk-cost">☢️ 1 BNB</div>
-            <div class="atk-desc">重置為 5 分鐘 (極速)</div>
+
+        <button class="atk-btn" id="btn_1" onclick="attack('1')">
+            <span class="cost">1 BNB</span>
+            <span class="desc">重置 5 分鐘</span>
         </button>
     </div>
 
-    <div class="dividend-panel">
-        <div class="info-row">
-            <span>👛 我的錢包餘額:</span>
-            <span class="highlight" id="myWalletBalance">--- BNB</span>
+    <button id="settleBtn" class="settle-btn" onclick="settleGame()">🏆 時間到！發放獎金與紅包</button>
+
+    <div class="stats-panel">
+        <div class="stat-row">
+            <span>👛 錢包餘額</span>
+            <span class="stat-val" id="myWallet">---</span>
         </div>
-        <div style="border-bottom: 1px dashed #555; margin: 10px 0;"></div>
-        <div class="info-row">
-            <span>💰 我的累積份額 (Shares):</span>
-            <span class="highlight" id="myShares">0 BNB</span>
+        <div class="stat-row">
+            <span>💰 累積份額 (Shares)</span>
+            <span class="stat-val" id="myShares">0.000</span>
         </div>
-        <div class="info-row">
-            <span>💎 當前可領分紅:</span>
-            <span class="highlight" id="myDividends">0.0000 BNB</span>
+        <div class="stat-row">
+            <span>💎 待領分紅</span>
+            <span class="stat-val" id="myDividends" style="color:#00FF00; font-weight:bold;">0.0000</span>
         </div>
-        <button class="claim-btn" onclick="claim()">🤑 領取分紅 (Claim)</button>
+        <button class="claim-btn" onclick="claim()">領取分紅 (Claim)</button>
     </div>
 
-    <div id="settleArea" style="margin-top:20px; display:none;">
-        <button onclick="settleGame()" style="background:#00AA00; color:white; border:2px solid #00FF00; padding:15px 30px; font-weight:bold; cursor:pointer; font-size:18px; border-radius:10px; box-shadow:0 0 15px #00FF00;">
-            🏆 時間到！點擊結算發獎 (開啟下一年)
-        </button>
+    <div class="footer-actions">
+        <button id="connectBtn" onclick="connectWallet()">🦊 連結錢包</button>
     </div>
-
-    <button id="connectBtn" onclick="connectWallet()">🦊 連結錢包</button>
 
     <div id="adminPanel" class="admin-panel">
-        <div style="color:#FF4444; font-weight:bold; margin-bottom:10px;">👑 管理員控制台</div>
-        <button class="fuse-btn" onclick="triggerFuse()">☠️ 啟動保險絲 (強制熔斷)</button>
+        <button class="fuse-btn" onclick="triggerFuse()">☠️ 啟動保險絲</button>
     </div>
 </div>
 
 <div id="rulesModal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" onclick="closeRules()">&times;</span>
-        <h2 class="rules-title">📜 討伐年獸攻略</h2>
-        
-        <div class="rule-item">
-            <span class="rule-icon">⚔️</span> <strong>核心玩法 (搶尾刀)</strong><br>
-            當「戰鬥倒數」歸零，或「強制開工」時間到達時，<span style="color:#FFD700">最後一位攻擊者</span> 視為擊殺年獸，獨得 <span style="color:#FFD700">80%</span> 大獎池！
-        </div>
-
-        <div class="rule-item">
-            <span class="rule-icon">💰</span> <strong>資金流向</strong><br>
-            您的攻擊金額分配：
-            <ul>
-                <li><strong>80%</strong>：進入年獸血量 (累積獎池)。</li>
-                <li><strong>20%</strong>：全網分紅 (按份額分配給所有玩家)。</li>
-            </ul>
-        </div>
-
-        <div class="rule-item">
-            <span class="rule-icon">⏳</span> <strong>時間重置機制</strong><br>
-            攻擊金額越高，倒數時間越短 (戰局越刺激)：<br>
-            🧨 0.001 BNB &rarr; 重置為 1 小時<br>
-            💣 0.01 BNB &rarr; 重置為 30 分鐘<br>
-            🚀 0.1 BNB &rarr; 重置為 15 分鐘<br>
-            ☢️ 1.0 BNB &rarr; 重置為 5 分鐘
-        </div>
-
-        <div class="rule-item">
-            <span class="rule-icon">📅</span> <strong>強制開工日</strong><br>
-            無論戰況如何，每年 <span style="color:#00FFFF">農曆初五中午 12:00</span> 強制結算。當下的最後攻擊者獲勝，遊戲自動進入下一年。
-        </div>
-
-        <div class="rule-item" style="color:#aaa; font-size:12px; border-top:1px solid #555; padding-top:10px;">
-            * 結算後，獎池的 20% 將保留為下一年的底池。<br>
-            * 遊戲內建 12 年自動輪迴機制，永續運作。
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3 style="color:var(--gold); margin-top:0;">📜 遊戲規則 (V7)</h3>
+        <div class="rule-row">1. <strong>搶尾刀</strong>：倒數結束前的最後攻擊者，獲得 <strong>80%</strong> 獎池。</div>
+        <div class="rule-row">2. <strong>強制開工</strong>：若到達農曆初五 12:00，觸發 <strong>60% 全網大紅包</strong> (贏家拿20%)。</div>
+        <div class="rule-row">3. <strong>終局模式 (Endgame)</strong>：
+            <br>剩 6 天：限 0.01 BNB (重置 20分)
+            <br>剩 5 天：限 0.01 BNB (重置 15分)
+            <br>剩 3 天：限 0.01 BNB (重置 10分)
+            <br>剩 24H：限 0.01 BNB (重置 5分)
+            <br>剩 60分：限 0.01 BNB (重置 60秒)
         </div>
     </div>
 </div>
 
 <script>
-    const NIAN_ADDRESS = "0x049f1f2F1399BAE97B2576CA70A8EEF148a7d5B8";
+    // ✅ 新的 V7 合約地址
+    const CONTRACT_ADDR = "0x5D568c438Fc8637F01fB09293aaB481A4fA607d7";
     
     const ABI = [
         "function attack() external payable",
@@ -272,11 +306,8 @@
     ];
 
     let provider, signer, contract;
-    let blockchainTimer;
-    let localTicker;
-    
-    let targetSoftDeadline = 0;
-    let targetHardDeadline = 0;
+    let timerInterval, blockchainInterval;
+    let softTarget = 0, hardTarget = 0;
 
     async function connectWallet() {
         if (!window.ethereum) return alert("請安裝 MetaMask");
@@ -286,147 +317,180 @@
             signer = provider.getSigner();
             const addr = await signer.getAddress();
             
-            document.getElementById("connectBtn").innerText = "✅ 已連結: " + addr.substring(0,6) + "...";
-            document.getElementById("connectBtn").disabled = true;
-            
-            contract = new ethers.Contract(NIAN_ADDRESS, ABI, signer);
-            
-            const ownerAddr = await contract.owner();
-            if (addr.toLowerCase() === ownerAddr.toLowerCase()) {
+            document.getElementById("connectBtn").innerText = "✅ " + addr.substring(0,6) + "...";
+            contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
+
+            const owner = await contract.owner();
+            if (addr.toLowerCase() === owner.toLowerCase()) {
                 document.getElementById("adminPanel").style.display = "block";
             }
 
-            await updateBlockchainData(addr);
+            await updateData(addr);
             
-            if (blockchainTimer) clearInterval(blockchainTimer);
-            blockchainTimer = setInterval(() => updateBlockchainData(addr), 5000);
+            clearInterval(blockchainInterval);
+            blockchainInterval = setInterval(() => updateData(addr), 5000); // 5秒更新鏈上數據
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimers, 1000); // 1秒更新倒數 UI
 
-            if (localTicker) clearInterval(localTicker);
-            localTicker = setInterval(updateLocalTimers, 1000);
-
-        } catch (e) { console.error(e); alert("連結失敗: " + e.message); }
+        } catch (e) { console.error(e); alert("連結錯誤"); }
     }
 
-    async function updateBlockchainData(addr) {
+    async function updateData(addr) {
         if(!contract) return;
         try {
             const hp = await contract.nianHp();
             document.getElementById("poolBalance").innerText = parseFloat(ethers.utils.formatEther(hp)).toFixed(4);
 
-            const softDL = await contract.deadline();
-            const hardDL = await contract.hardDeadline();
-            targetSoftDeadline = softDL.toNumber();
-            targetHardDeadline = hardDL.toNumber();
+            const s = await contract.deadline();
+            const h = await contract.hardDeadline();
+            softTarget = s.toNumber();
+            hardTarget = h.toNumber();
 
             const last = await contract.lastAttacker();
-            if (last === "0x0000000000000000000000000000000000000000") {
-                document.getElementById("lastAttacker").innerText = "等待首位勇者...";
-            } else {
-                document.getElementById("lastAttacker").innerText = last.substring(0,6) + "..." + last.substring(38);
-            }
+            document.getElementById("lastAttacker").innerText = 
+                (last === "0x0000000000000000000000000000000000000000") ? "---" : last.substring(0,6) + "...";
 
-            const pending = await contract.getPendingDividend(addr);
-            document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pending)).toFixed(6) + " BNB";
+            const pend = await contract.getPendingDividend(addr);
+            document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pend)).toFixed(5);
             
-            const playerData = await contract.players(addr);
-            document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(playerData[0])).toFixed(3) + " BNB";
+            const pData = await contract.players(addr);
+            document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(pData[0])).toFixed(3);
 
-            const balance = await provider.getBalance(addr);
-            document.getElementById("myWalletBalance").innerText = parseFloat(ethers.utils.formatEther(balance)).toFixed(4) + " BNB";
+            const bal = await provider.getBalance(addr);
+            document.getElementById("myWallet").innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4);
 
+            // 檢查是否結束
             const isOver = await contract.isGameOver();
-            const now = Math.floor(Date.now() / 1000);
-            const timeUp = (now >= targetSoftDeadline || now >= targetHardDeadline);
+            const now = Math.floor(Date.now()/1000);
+            const timeUp = (now >= softTarget || now >= hardTarget);
             
+            const settleBtn = document.getElementById("settleBtn");
             if (!isOver && timeUp && hp.gt(0)) {
-                document.getElementById("settleArea").style.display = "block";
+                settleBtn.style.display = "block";
             } else {
-                document.getElementById("settleArea").style.display = "none";
+                settleBtn.style.display = "none";
             }
 
-        } catch (e) { console.error("Update Error:", e); }
+            // 更新按鈕狀態 (重要：決定終局 UI)
+            updateButtonLayout(now);
+
+        } catch(e) { console.error(e); }
     }
 
-    function updateLocalTimers() {
+    function updateTimers() {
         const now = Math.floor(Date.now() / 1000);
-        if (targetSoftDeadline > 0) {
-            const diffSoft = targetSoftDeadline - now;
-            document.getElementById("softTimer").innerText = formatTime(diffSoft);
-            if(diffSoft <= 0) document.getElementById("softTimer").style.color = "#FF4444";
-            else document.getElementById("softTimer").style.color = "#FF0000";
-        }
-        if (targetHardDeadline > 0) {
-            const diffHard = targetHardDeadline - now;
-            document.getElementById("hardTimer").innerText = formatTime(diffHard);
-        }
-    }
-
-    function formatTime(seconds) {
-        if (seconds <= 0) return "00:00:00";
-        const d = Math.floor(seconds / (3600 * 24));
-        const h = Math.floor((seconds % (3600 * 24)) / 3600).toString().padStart(2,'0');
-        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2,'0');
-        const s = (seconds % 60).toString().padStart(2,'0');
         
-        if (d > 0) return `${d}天 ${h}:${m}:${s}`;
-        return `${h}:${m}:${s}`;
+        // 軟倒數
+        if (softTarget > 0) {
+            const diff = softTarget - now;
+            document.getElementById("softTimer").innerText = formatTime(diff);
+            document.getElementById("softTimer").style.color = diff <= 300 ? "#FF0000" : "#FFF";
+        }
+        
+        // 硬倒數
+        if (hardTarget > 0) {
+            const diff = hardTarget - now;
+            document.getElementById("hardTimer").innerText = formatTime(diff);
+            // 本地也跑一次 UI 更新，確保秒數切換時按鈕即時反應
+            updateButtonLayout(now); 
+        }
     }
 
-    async function attack(bnbAmount) {
+    // 🔥 核心 UI 邏輯：處理終局模式的按鈕顯示與隱藏
+    function updateButtonLayout(now) {
+        if (hardTarget === 0) return;
+        const diff = hardTarget - now; // 距離開工還有多久
+
+        const btn0001 = document.getElementById("btn_0001");
+        const btn001 = document.getElementById("btn_001"); // 主角
+        const btn01 = document.getElementById("btn_01");
+        const btn1 = document.getElementById("btn_1");
+        
+        const grid = document.getElementById("attackGrid");
+        const bossCard = document.getElementById("bossCard");
+        const badge = document.getElementById("endgameBadge");
+        const desc001 = document.getElementById("desc_001");
+
+        // 判斷是否進入 6 天內的終局模式
+        // 6 days = 518400 seconds
+        if (diff <= 518400) {
+            // === 終局模式 ===
+            
+            // 1. 隱藏其他按鈕
+            btn0001.style.display = "none";
+            btn01.style.display = "none";
+            btn1.style.display = "none";
+
+            // 2. 改變佈局為單欄
+            grid.classList.add("single-mode");
+
+            // 3. 強化 0.01 按鈕樣式
+            btn001.classList.add("special-mode");
+
+            // 4. 開啟特效
+            bossCard.classList.add("endgame-mode");
+            badge.style.display = "block";
+
+            // 5. 更新文字說明
+            if (diff <= 3600) {
+                desc001.innerText = "🚨 最後一小時：重置 60 秒";
+                badge.innerText = "🧨 終局：60 秒極速戰";
+            } else if (diff <= 86400) {
+                desc001.innerText = "⚡ 最後一天：重置 5 分鐘";
+                badge.innerText = "🧨 終局：5 分鐘死鬥";
+            } else if (diff <= 259200) { // 3 days
+                desc001.innerText = "⚠️ 最後 3 天：重置 10 分鐘";
+                badge.innerText = "🧨 終局：10 分鐘戰";
+            } else if (diff <= 432000) { // 5 days
+                desc001.innerText = "⚠️ 最後 5 天：重置 15 分鐘";
+                badge.innerText = "🧨 終局：15 分鐘戰";
+            } else { // 6 days
+                desc001.innerText = "⚠️ 最後 6 天：重置 20 分鐘";
+                badge.innerText = "🧨 終局：20 分鐘戰";
+            }
+
+        } else {
+            // === 平時模式 ===
+            
+            // 恢復顯示
+            btn0001.style.display = "flex";
+            btn01.style.display = "flex";
+            btn1.style.display = "flex";
+            
+            grid.classList.remove("single-mode");
+            btn001.classList.remove("special-mode");
+            bossCard.classList.remove("endgame-mode");
+            badge.style.display = "none";
+            
+            desc001.innerText = "重置 30 分鐘";
+        }
+    }
+
+    function formatTime(s) {
+        if (s <= 0) return "00:00:00";
+        const d = Math.floor(s / 86400);
+        const h = Math.floor((s % 86400) / 3600).toString().padStart(2,'0');
+        const m = Math.floor((s % 3600) / 60).toString().padStart(2,'0');
+        const sec = (s % 60).toString().padStart(2,'0');
+        return (d>0) ? `${d}天 ${h}:${m}:${sec}` : `${h}:${m}:${sec}`;
+    }
+
+    async function attack(amt) {
         if(!contract) return;
         try {
-            const tx = await contract.attack({ value: ethers.utils.parseEther(bnbAmount) });
-            document.getElementById("softTimer").innerText = "確認中...";
+            const tx = await contract.attack({ value: ethers.utils.parseEther(amt) });
             await tx.wait();
-            updateBlockchainData(await signer.getAddress());
-        } catch (e) {
-            alert("攻擊失敗：" + (e.data?.message || e.message));
-        }
+            updateData(await signer.getAddress());
+        } catch(e) { alert("攻擊失敗：" + (e.data?.message || e.message)); }
     }
+    async function claim() { try{(await contract.claimDividend()).wait(); alert("成功");}catch(e){alert("失敗");} }
+    async function settleGame() { try{(await contract.settleGame()).wait(); alert("結算完成");}catch(e){alert("失敗");} }
+    async function triggerFuse() { if(confirm("確定?")) try{(await contract.triggerFuse()).wait(); alert("熔斷成功");}catch(e){alert("失敗");} }
 
-    async function claim() {
-        if(!contract) return;
-        try {
-            const tx = await contract.claimDividend();
-            await tx.wait();
-            alert("💰 領取成功！");
-            updateBlockchainData(await signer.getAddress());
-        } catch (e) {
-            alert("領取失敗：" + (e.data?.message || e.message));
-        }
-    }
-
-    async function settleGame() {
-        if(!contract) return;
-        try {
-            const tx = await contract.settleGame();
-            await tx.wait();
-            alert("🏆 遊戲結算完成！新的一年開始了！");
-            updateBlockchainData(await signer.getAddress());
-        } catch (e) {
-            alert("結算失敗：" + (e.data?.message || e.message));
-        }
-    }
-
-    async function triggerFuse() {
-        if(!confirm("⚠️ 警告：這將永久結束遊戲並回收資金，確定嗎？")) return;
-        try {
-            const tx = await contract.triggerFuse();
-            await tx.wait();
-            alert("🔒 保險絲已啟動。");
-        } catch (e) {
-            alert("熔斷失敗：" + (e.data?.message || e.message));
-        }
-    }
-
-    // Modal Control
-    function openRules() { document.getElementById("rulesModal").style.display = "block"; }
-    function closeRules() { document.getElementById("rulesModal").style.display = "none"; }
-    window.onclick = function(event) {
-        if (event.target == document.getElementById("rulesModal")) {
-            closeRules();
-        }
-    }
+    function openModal() { document.getElementById("rulesModal").style.display = "block"; }
+    function closeModal() { document.getElementById("rulesModal").style.display = "none"; }
+    window.onclick = (e) => { if(e.target == document.getElementById("rulesModal")) closeModal(); }
 </script>
 
 </body>
