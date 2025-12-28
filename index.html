@@ -44,7 +44,6 @@
         header { text-align: center; margin-bottom: 20px; position: relative; }
         h1 { margin: 0; font-size: 26px; color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); letter-spacing: 1px; }
         .subtitle { font-size: 12px; color: #aaa; margin-top: 5px; }
-        .highlight { color: #00FFFF; font-weight: bold; }
         
         .rules-btn {
             background: rgba(255,215,0,0.1); border: 1px solid var(--gold); color: var(--gold);
@@ -169,7 +168,6 @@
         #adminPanel { display: none; margin-top: 20px; text-align: center; }
         .fuse-btn { background: #500; color: #fff; border: 1px solid red; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
 
-        /* Mobile specific adjustments */
         @media (max-width: 400px) {
             h1 { font-size: 22px; }
             .pool-amount { font-size: 26px; }
@@ -182,7 +180,7 @@
 
 <div class="container">
     <header>
-        <h1>🧨 砲轟年獸 V13</h1>
+        <h1>🧨 砲轟年獸 V13.2</h1>
         <div class="subtitle">擊殺搶 80% • 初五分紅包 • 回合制股份</div>
         <button class="rules-btn" onclick="openModal()">📜 規則說明</button>
     </header>
@@ -252,7 +250,7 @@
 <div id="rulesModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h3 style="color:var(--gold); margin-top:0;">📜 遊戲規則 (V13)</h3>
+        <h3 style="color:var(--gold); margin-top:0;">📜 遊戲規則 (V13.2)</h3>
         <div class="rule-item"><strong>1. 回合制搶尾刀</strong><br>倒數歸零時，最後攻擊者獲得 <span style="color:var(--gold)">80% 獎池</span>。下一局股份重置，重新開始。</div>
         <div class="rule-item"><strong>2. 強制開工紅包</strong><br>若到達農曆初五 12:00，觸發 <span style="color:#ff5555">60% 全網大紅包</span> (按當局股份分配)，贏家拿 20%。</div>
         <div class="rule-item"><strong>3. 終局模式 (Endgame)</strong><br>
@@ -263,10 +261,9 @@
 </div>
 
 <script>
-    // ✅ 設定新的 V13.1 合約地址
-    const CONTRACT_ADDR = "0xB08F863Ee82bCA152757c58c915B77338dfFc6b1";
+    // ✅ 更新 V13.2 合約地址
+    const CONTRACT_ADDR = "0x78278539dDA6546Bee8E57c724942E42471ab71B";
     
-    // 包含 V13.1 所需的所有函數 (含 History)
     const ABI = [
         "function attack() external payable",
         "function settleGame() external",
@@ -289,7 +286,6 @@
     let softTarget = 0, hardTarget = 0;
     let isConnected = false;
 
-    // --- 初始化與連接 ---
     async function connectWallet() {
         if (!window.ethereum) return alert("請安裝 MetaMask");
         try {
@@ -306,25 +302,20 @@
 
             isConnected = true;
             
-            // 檢查 Owner
             contract.owner().then(owner => {
                 if (addr.toLowerCase() === owner.toLowerCase()) {
                     document.getElementById("adminPanel").style.display = "block";
                 }
             }).catch(console.error);
 
-            // 啟動更新循環
             updateAllData(addr); 
             
-            // 1. 倒數計時器 (每秒)
             clearInterval(timerInterval);
             timerInterval = setInterval(updateTimers, 1000);
             
-            // 2. 區塊鏈核心數據 (每5秒) - 分流以防卡頓
             clearInterval(dataInterval);
             dataInterval = setInterval(() => updateBlockchainData(addr), 5000);
 
-            // 3. 歷史戰績 (每30秒) - 不需要太頻繁
             updateHistory();
             clearInterval(historyInterval);
             historyInterval = setInterval(updateHistory, 30000);
@@ -336,7 +327,6 @@
         }
     }
 
-    // --- 數據更新核心 ---
     async function updateAllData(addr) {
         await updateBlockchainData(addr);
         await updateHistory();
@@ -345,7 +335,6 @@
     async function updateBlockchainData(addr) {
         if (!contract) return;
         try {
-            // 使用 Promise.all 並行請求，大幅提升速度
             const [hp, sTime, hTime, last, pend, pData, bal, isOver, rId] = await Promise.all([
                 contract.nianHp(),
                 contract.deadline(),
@@ -358,22 +347,18 @@
                 contract.currentRoundId()
             ]);
 
-            // 1. 全局數據
             document.getElementById("poolBalance").innerText = parseFloat(ethers.utils.formatEther(hp)).toFixed(4);
             softTarget = sTime.toNumber();
             hardTarget = hTime.toNumber();
             document.getElementById("roundId").innerText = "#" + rId.toString();
 
-            // 2. 最後攻擊者
             document.getElementById("lastAttacker").innerText = 
                 (last === "0x0000000000000000000000000000000000000000") ? "---" : last.substring(0,6) + "..." + last.substring(38);
 
-            // 3. 用戶數據
             document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pend)).toFixed(5);
             document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(pData[0])).toFixed(3);
             document.getElementById("myWallet").innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4);
 
-            // 4. 結算按鈕
             const now = Math.floor(Date.now()/1000);
             const timeUp = (now >= softTarget || now >= hardTarget);
             const btn = document.getElementById("settleBtn");
@@ -383,20 +368,17 @@
                 btn.style.display = "none";
             }
 
-            // 5. 更新按鈕 UI 狀態
             updateButtonLayout(now);
 
         } catch (e) {
-            console.error("Data update failed:", e); // 不彈出 alert 避免干擾體驗
+            console.error("Data update failed:", e);
         }
     }
 
-    // --- 倒數與 UI 邏輯 ---
     function updateTimers() {
         if (!isConnected) return;
         const now = Math.floor(Date.now() / 1000);
         
-        // 軟倒數
         if (softTarget > 0) {
             const diff = softTarget - now;
             const el = document.getElementById("softTimer");
@@ -404,11 +386,9 @@
             el.style.color = diff <= 300 ? "#ff3b3b" : "#fff";
         }
         
-        // 硬倒數
         if (hardTarget > 0) {
             const diff = hardTarget - now;
             document.getElementById("hardTimer").innerText = formatTime(diff);
-            // 本地觸發 UI 變更，確保即時反應
             updateButtonLayout(now);
         }
     }
@@ -426,9 +406,7 @@
         const tag = document.getElementById("endgameTag");
         const desc001 = document.getElementById("desc_001");
 
-        // 6 days = 518400 seconds
         if (diff <= 518400 && diff > 0) {
-            // === 終局模式 ===
             grid.classList.add("single-mode");
             btn0001.style.display = "none";
             btn01.style.display = "none";
@@ -441,22 +419,21 @@
             let resetText = "";
             let tagText = "";
 
-            if (diff <= 3600) { // 1h
+            if (diff <= 3600) { 
                 resetText = "重置 60 秒"; tagText = "🧨 終局：60 秒極速戰";
-            } else if (diff <= 86400) { // 24h
+            } else if (diff <= 86400) { 
                 resetText = "重置 5 分鐘"; tagText = "🧨 終局：5 分鐘死鬥";
-            } else if (diff <= 259200) { // 3 days
+            } else if (diff <= 259200) { 
                 resetText = "重置 10 分鐘"; tagText = "🧨 終局：10 分鐘戰";
-            } else if (diff <= 432000) { // 5 days
+            } else if (diff <= 432000) { 
                 resetText = "重置 15 分鐘"; tagText = "🧨 終局：15 分鐘戰";
-            } else { // 6 days
+            } else { 
                 resetText = "重置 20 分鐘"; tagText = "🧨 終局：20 分鐘戰";
             }
             desc001.innerText = resetText;
             tag.innerText = tagText;
 
         } else {
-            // === 平時模式 ===
             grid.classList.remove("single-mode");
             btn0001.style.display = "flex";
             btn01.style.display = "flex";
@@ -469,11 +446,9 @@
         }
     }
 
-    // --- 歷史紀錄 ---
     async function updateHistory() {
         if (!contract) return;
         try {
-            // 抓取最新的 10 筆
             const historyData = await contract.getHistoryPage(0, 10);
             const listDiv = document.getElementById("historyList");
             
@@ -506,7 +481,6 @@
         } catch (e) { console.error("History fetch error:", e); }
     }
 
-    // --- 互動函數 ---
     function formatTime(s) {
         if (s <= 0) return "00:00:00";
         const d = Math.floor(s / 86400);
@@ -521,7 +495,7 @@
         try {
             const tx = await contract.attack({ value: ethers.utils.parseEther(amt) });
             await tx.wait();
-            updateBlockchainData(await signer.getAddress()); // 立即更新數據
+            updateBlockchainData(await signer.getAddress()); 
         } catch(e) { alert("攻擊失敗：" + (e.data?.message || e.message)); }
     }
     async function claim() { try{(await contract.claimDividend()).wait(); alert("領取成功"); updateAllData(await signer.getAddress());}catch(e){alert("失敗: "+(e.data?.message||e.message));} }
@@ -535,5 +509,6 @@
 
 </body>
 </html>
+
 
 
