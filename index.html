@@ -6,509 +6,244 @@
     <title>🧨 砲轟年獸：回合制決戰</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
-    
     <style>
-        :root {
-            --gold: #FFD700;
-            --red: #ff3b3b;
-            --dark-red: #3a0000;
-            --bg-color: #1a0505;
-            --glass: rgba(20, 0, 0, 0.7);
-            --border: 1px solid rgba(255, 215, 0, 0.2);
-            --card-bg: rgba(255, 255, 255, 0.03);
-        }
-
+        :root { --gold: #FFD700; --red: #ff3b3b; --bg: #1a0505; --glass: rgba(20, 0, 0, 0.85); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(circle at top, #4a0000 0%, #000000 80%);
-            color: #eee;
-            font-family: 'Noto Sans TC', sans-serif;
-            margin: 0; padding: 15px;
-            min-height: 100vh;
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        .container {
-            width: 100%; max-width: 550px;
-            background: var(--glass);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 69, 0, 0.3);
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        /* --- Header --- */
-        header { text-align: center; margin-bottom: 20px; position: relative; }
-        h1 { margin: 0; font-size: 26px; color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); letter-spacing: 1px; }
+        body { background: var(--bg); background-image: radial-gradient(circle at top, #4a0000 0%, #000 80%); color: #eee; font-family: 'Noto Sans TC', sans-serif; margin: 0; padding: 15px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 550px; background: var(--glass); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255, 69, 0, 0.3); padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 0; font-size: 26px; color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .subtitle { font-size: 12px; color: #aaa; margin-top: 5px; }
+        .rules-btn { background: rgba(255,215,0,0.1); border: 1px solid var(--gold); color: var(--gold); padding: 4px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; margin-top: 10px; }
         
-        .rules-btn {
-            background: rgba(255,215,0,0.1); border: 1px solid var(--gold); color: var(--gold);
-            padding: 4px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; margin-top: 10px;
-        }
-
-        /* --- Boss Card --- */
-        .boss-card {
-            background: linear-gradient(145deg, #2b0000, #1a0000);
-            border: 1px solid var(--gold);
-            border-radius: 16px; padding: 20px;
-            text-align: center; margin-bottom: 20px;
-            position: relative; overflow: hidden;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.6);
-        }
+        .boss-card { background: linear-gradient(145deg, #2b0000, #1a0000); border: 1px solid var(--gold); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; position: relative; overflow: hidden; }
+        .boss-card.endgame { border-color: var(--red); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+        .endgame-tag { position: absolute; top: 0; right: 0; background: var(--red); color: white; font-size: 10px; padding: 4px 8px; border-bottom-left-radius: 8px; display: none; font-weight: bold; }
         
-        .boss-card.endgame {
-            border-color: var(--red);
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3), inset 0 0 30px rgba(50, 0, 0, 0.8);
-            animation: pulse-border 2s infinite;
-        }
-        @keyframes pulse-border { 0% { border-color: #ff0000; } 50% { border-color: #ffaa00; } 100% { border-color: #ff0000; } }
-
-        .endgame-tag {
-            position: absolute; top: 0; right: 0;
-            background: var(--red); color: white;
-            font-size: 10px; padding: 4px 8px;
-            border-bottom-left-radius: 8px; display: none; font-weight: bold;
-        }
-
-        .pool-label { font-size: 12px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .pool-label { font-size: 12px; color: #aaa; text-transform: uppercase; }
         .pool-amount { font-family: 'Roboto Mono', monospace; font-size: 32px; font-weight: 700; color: #fff; margin: 5px 0 15px 0; }
-        .bnb-unit { font-size: 14px; color: var(--gold); }
-
-        /* Timers */
+        
         .timer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .timer-box { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 8px; }
-        .timer-box.soft { border: 1px solid #ff5555; color: #ff5555; }
-        .timer-box.hard { border: 1px solid #00FFFF; color: #00FFFF; }
-        .t-label { font-size: 10px; display: block; opacity: 0.8; margin-bottom: 2px; }
+        .t-label { font-size: 10px; opacity: 0.8; display: block; }
         .t-val { font-family: 'Roboto Mono', monospace; font-size: 16px; font-weight: bold; }
-
         .last-hit { font-size: 12px; background: rgba(255,255,255,0.05); padding: 6px; border-radius: 12px; color: #ccc; }
-        .addr-txt { color: #00FFFF; font-family: 'Roboto Mono'; font-weight: bold; }
-
-        /* --- Attack Buttons --- */
-        .attack-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px;
-            transition: all 0.3s ease;
-        }
+        
+        .attack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
         .attack-grid.single-mode { grid-template-columns: 1fr; }
-
-        .atk-btn {
-            background: linear-gradient(180deg, #3d3d3d, #222);
-            border: 1px solid #555; color: #fff;
-            padding: 15px; border-radius: 12px; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            position: relative; min-height: 80px;
-            transition: transform 0.1s, border-color 0.2s;
-        }
+        .atk-btn { background: linear-gradient(180deg, #3d3d3d, #222); border: 1px solid #555; color: #fff; padding: 15px; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; min-height: 80px; justify-content: center; }
         .atk-btn:active { transform: scale(0.96); }
-        .atk-btn .cost { font-size: 18px; font-weight: bold; font-family: 'Roboto Mono'; color: #fff; }
+        .atk-btn.special { background: linear-gradient(135deg, #8B0000 0%, #400000 100%); border: 2px solid var(--gold); }
+        .atk-btn .cost { font-size: 18px; font-weight: bold; font-family: 'Roboto Mono'; }
         .atk-btn .desc { font-size: 11px; margin-top: 4px; color: #aaa; }
-
-        /* Special 0.01 Button for Endgame */
-        .atk-btn.special {
-            background: linear-gradient(135deg, #8B0000 0%, #400000 100%);
-            border: 2px solid var(--gold);
-            box-shadow: 0 0 20px rgba(255, 69, 0, 0.4);
-        }
-        .atk-btn.special .cost { font-size: 24px; color: var(--gold); }
-        .atk-btn.special .desc { font-size: 14px; color: #fff; font-weight: bold; }
-
-        /* --- User Stats --- */
-        .stats-panel {
-            background: var(--card-bg); border-radius: 12px; padding: 15px; margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
+        
+        .stats-panel { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #bbb; }
-        .stat-val { color: var(--gold); font-family: 'Roboto Mono'; }
-
-        .claim-btn {
-            width: 100%; background: linear-gradient(90deg, #FFD700, #FFA500);
-            border: none; padding: 12px; border-radius: 25px;
-            color: #4a0000; font-weight: bold; font-size: 16px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
-        }
-        .claim-btn:active { transform: scale(0.98); }
-
-        /* --- Settle & Connect --- */
-        .settle-btn {
-            width: 100%; background: #00E676; color: #000; font-weight: bold;
-            padding: 15px; border: none; border-radius: 12px; font-size: 18px;
-            margin-bottom: 20px; cursor: pointer; display: none;
-            animation: bounce 1s infinite;
-        }
+        .claim-btn { width: 100%; background: linear-gradient(90deg, #FFD700, #FFA500); border: none; padding: 12px; border-radius: 25px; color: #4a0000; font-weight: bold; cursor: pointer; }
+        
+        #settleBtn { width: 100%; background: #00E676; color: #000; font-weight: bold; padding: 15px; border: none; border-radius: 12px; margin-bottom: 20px; cursor: pointer; display: none; animation: bounce 1s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-
-        #connectBtn {
-            width: 100%; background: #333; color: #fff; border: 1px solid #666;
-            padding: 12px; border-radius: 30px; font-size: 14px; cursor: pointer;
-        }
-
-        /* --- History --- */
+        #connectBtn { width: 100%; background: #333; color: #fff; border: 1px solid #666; padding: 12px; border-radius: 30px; cursor: pointer; }
+        
         .history-section { margin-top: 25px; border-top: 1px dashed #444; padding-top: 15px; }
-        .hist-title { font-size: 14px; color: var(--gold); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .hist-list { max-height: 150px; overflow-y: auto; font-size: 12px; }
-        .hist-item {
-            display: flex; justify-content: space-between; padding: 8px;
-            background: rgba(0,0,0,0.3); margin-bottom: 6px; border-radius: 6px;
-        }
+        .hist-item { display: flex; justify-content: space-between; padding: 8px; background: rgba(0,0,0,0.3); margin-bottom: 6px; border-radius: 6px; font-size: 12px; }
         .hist-item.hard { border-left: 3px solid #ff0000; }
-        .hist-item.soft { border-left: 3px solid #333; }
-
-        /* --- Modal --- */
+        
         .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
-        .modal-content { background: #1a1a1a; margin: 15% auto; padding: 25px; width: 85%; max-width: 400px; border-radius: 15px; border: 1px solid var(--gold); color: #eee; position: relative; }
-        .close { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; }
-        .rule-item { margin-bottom: 10px; font-size: 13px; line-height: 1.5; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* Admin */
+        .modal-content { background: #1a1a1a; margin: 15% auto; padding: 25px; width: 85%; max-width: 400px; border-radius: 15px; border: 1px solid var(--gold); }
+        .close { float: right; font-size: 24px; cursor: pointer; }
+        
         #adminPanel { display: none; margin-top: 20px; text-align: center; }
         .fuse-btn { background: #500; color: #fff; border: 1px solid red; padding: 8px 20px; border-radius: 5px; cursor: pointer; }
-
-        @media (max-width: 400px) {
-            h1 { font-size: 22px; }
-            .pool-amount { font-size: 26px; }
-            .atk-btn { min-height: 70px; padding: 10px; }
-            .atk-btn .cost { font-size: 16px; }
-        }
     </style>
 </head>
 <body>
-
 <div class="container">
     <header>
-        <h1>🧨 砲轟年獸 </h1>
+        <h1>🧨 砲轟年獸 V13.2</h1>
         <div class="subtitle">擊殺搶 80% • 初五分紅包 • 回合制股份</div>
-        <button class="rules-btn" onclick="openModal()">📜 規則說明</button>
+        <button class="rules-btn" onclick="document.getElementById('rulesModal').style.display='block'">📜 規則說明</button>
     </header>
-
     <div class="boss-card" id="bossCard">
         <div class="endgame-tag" id="endgameTag">🧧 終局模式</div>
         <div class="pool-label">當前獎池 (Round <span id="roundId">#1</span>)</div>
-        <div class="pool-amount"><span id="poolBalance">---</span> <span class="bnb-unit">BNB</span></div>
-
+        <div class="pool-amount"><span id="poolBalance">---</span> BNB</div>
         <div class="timer-grid">
-            <div class="timer-box soft">
-                <span class="t-label">🔥 戰鬥倒數 (重置)</span>
-                <span class="t-val" id="softTimer">--:--:--</span>
+            <div class="timer-box" style="border:1px solid #ff5555; color:#ff5555">
+                <span class="t-label">🔥 戰鬥倒數</span><span class="t-val" id="softTimer">--:--:--</span>
             </div>
-            <div class="timer-box hard">
-                <span class="t-label">📅 強制開工 (固定)</span>
-                <span class="t-val" id="hardTimer">--:--:--</span>
+            <div class="timer-box" style="border:1px solid #00FFFF; color:#00FFFF">
+                <span class="t-label">📅 強制開工</span><span class="t-val" id="hardTimer">--:--:--</span>
             </div>
         </div>
-
-        <div class="last-hit">
-            ⚔️ 上一位勇者: <span id="lastAttacker" class="addr-txt">---</span>
-        </div>
+        <div class="last-hit">⚔️ 上一位勇者: <span id="lastAttacker" style="color:#00FFFF; font-weight:bold">---</span></div>
     </div>
-
     <div class="attack-grid" id="attackGrid">
-        <button class="atk-btn" id="btn_0001" onclick="attack('0.001')">
-            <span class="cost">0.001 BNB</span><span class="desc">重置 1 小時</span>
-        </button>
-        <button class="atk-btn" id="btn_001" onclick="attack('0.01')">
-            <span class="cost">0.01 BNB</span><span class="desc" id="desc_001">重置 30 分鐘</span>
-        </button>
-        <button class="atk-btn" id="btn_01" onclick="attack('0.1')">
-            <span class="cost">0.1 BNB</span><span class="desc">重置 15 分鐘</span>
-        </button>
-        <button class="atk-btn" id="btn_1" onclick="attack('1')">
-            <span class="cost">1 BNB</span><span class="desc">重置 5 分鐘</span>
-        </button>
+        <button class="atk-btn" id="btn_0001" onclick="attack('0.001')"><span class="cost">0.001 BNB</span><span class="desc">重置 1 小時</span></button>
+        <button class="atk-btn" id="btn_001" onclick="attack('0.01')"><span class="cost">0.01 BNB</span><span class="desc" id="desc_001">重置 30 分鐘</span></button>
+        <button class="atk-btn" id="btn_01" onclick="attack('0.1')"><span class="cost">0.1 BNB</span><span class="desc">重置 15 分鐘</span></button>
+        <button class="atk-btn" id="btn_1" onclick="attack('1')"><span class="cost">1 BNB</span><span class="desc">重置 5 分鐘</span></button>
     </div>
-
-    <button id="settleBtn" class="settle-btn" onclick="settleGame()">🏆 時間到！點擊發獎 (開啟下局)</button>
-
+    <button id="settleBtn" onclick="settleGame()">🏆 時間到！點擊發獎</button>
     <div class="stats-panel">
-        <div class="stat-row"><span>👛 錢包餘額</span><span class="stat-val" id="myWallet">---</span></div>
-        <div class="stat-row"><span>💰 本局股份 (Shares)</span><span class="stat-val" id="myShares">0.000</span></div>
-        <div class="stat-row"><span>💎 待領分紅 (含舊帳)</span><span class="stat-val" id="myDividends" style="color:#00FF00; font-weight:bold;">0.0000</span></div>
+        <div class="stat-row"><span>👛 錢包餘額</span><span style="color:var(--gold)" id="myWallet">---</span></div>
+        <div class="stat-row"><span>💰 本局股份</span><span style="color:var(--gold)" id="myShares">0.000</span></div>
+        <div class="stat-row"><span>💎 待領分紅</span><span style="color:#00FF00; font-weight:bold" id="myDividends">0.0000</span></div>
         <button class="claim-btn" onclick="claim()">領取分紅 (Claim)</button>
     </div>
-
     <button id="connectBtn" onclick="connectWallet()">🦊 連結錢包</button>
-
     <div class="history-section">
-        <div class="hist-title">
-            <span>🏆 歷代名人堂 (最近 10 局)</span>
-            <span style="font-size:10px; cursor:pointer;" onclick="updateHistory()">🔄</span>
+        <div style="color:var(--gold); margin-bottom:10px; font-size:14px; display:flex; justify-content:space-between">
+            <span>🏆 歷代名人堂</span><span style="cursor:pointer" onclick="updateHistory()">🔄</span>
         </div>
-        <div class="hist-list" id="historyList">
-            <div style="text-align:center; padding:10px; color:#666;">載入中...</div>
-        </div>
+        <div id="historyList" style="max-height:150px; overflow-y:auto; text-align:center; color:#666">載入中...</div>
     </div>
-
-    <div id="adminPanel">
-        <button class="fuse-btn" onclick="triggerFuse()">☠️ 啟動保險絲</button>
-    </div>
+    <div id="adminPanel"><button class="fuse-btn" onclick="triggerFuse()">☠️ 啟動保險絲</button></div>
 </div>
 
 <div id="rulesModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <h3 style="color:var(--gold); margin-top:0;">📜 遊戲規則 </h3>
-        <div class="rule-item"><strong>1. 回合制搶尾刀</strong><br>倒數歸零時，最後攻擊者獲得 <span style="color:var(--gold)">80% 獎池</span>。下一局股份重置，重新開始。</div>
-        <div class="rule-item"><strong>2. 強制開工紅包</strong><br>若到達農曆初五 12:00，觸發 <span style="color:#ff5555">60% 全網大紅包</span> (按當局股份分配)，贏家拿 20%。</div>
-        <div class="rule-item"><strong>3. 終局模式 (Endgame)</strong><br>
-        倒數 6 天內，強制只能用 0.01 BNB，重置時間縮短：<br>
-        6天(20分) → 5天(15分) → 3天(10分) → 24H(5分) → 60分(1分)。</div>
-        <div class="rule-item"><strong>4. 股份自動結算</strong><br>跨回合後，舊分紅會自動存入撲滿，請記得手動領取。</div>
+        <span class="close" onclick="document.getElementById('rulesModal').style.display='none'">&times;</span>
+        <h3 style="color:var(--gold); margin-top:0;">📜 遊戲規則</h3>
+        <p style="font-size:13px; line-height:1.6">1. <b>搶尾刀</b>：倒數歸零時，最後攻擊者得 80% 獎池。<br>2. <b>開工紅包</b>：農曆初五強制結算，觸發 60% 全網分紅。<br>3. <b>終局模式</b>：倒數 6 天內攻擊時間縮短。</p>
     </div>
 </div>
 
 <script>
-    // ✅ 更新 V13.2 合約地址
-    const CONTRACT_ADDR = "0x78278539dDA6546Bee8E57c724942E42471ab71B";
-    
+    const CONTRACT_ADDR = "0x7A427604Ff8Ce728A60cF5cB247B30C0cE29188B";
     const ABI = [
-        "function attack() external payable",
-        "function settleGame() external",
-        "function claimDividend() external",
-        "function triggerFuse() external",
-        "function nianHp() view returns (uint256)",
-        "function lastAttacker() view returns (address)",
-        "function getPendingDividend(address) view returns (uint256)",
-        "function players(address) view returns (uint112, uint112, uint32)",
-        "function isGameOver() view returns (bool)",
-        "function owner() view returns (address)",
-        "function deadline() view returns (uint64)",
-        "function hardDeadline() view returns (uint64)",
-        "function currentRoundId() view returns (uint64)",
+        "function attack() external payable", "function settleGame() external", "function claimDividend() external", "function triggerFuse() external",
+        "function nianHp() view returns (uint256)", "function lastAttacker() view returns (address)", "function getPendingDividend(address) view returns (uint256)",
+        "function players(address) view returns (uint112, uint112, uint32)", "function isGameOver() view returns (bool)", "function owner() view returns (address)",
+        "function deadline() view returns (uint64)", "function hardDeadline() view returns (uint64)", "function currentRoundId() view returns (uint64)",
         "function getHistoryPage(uint256 cursor, uint256 size) view returns (tuple(uint64 roundId, uint64 timestamp, address winner, uint256 winAmount, bool isHardWin)[])"
     ];
-
-    let provider, signer, contract;
-    let timerInterval, dataInterval, historyInterval;
-    let softTarget = 0, hardTarget = 0;
-    let isConnected = false;
+    let provider, signer, contract, timerInterval, dataInterval, softTarget=0, hardTarget=0;
 
     async function connectWallet() {
         if (!window.ethereum) return alert("請安裝 MetaMask");
         try {
-            const btn = document.getElementById("connectBtn");
-            btn.innerText = "連結中...";
-            
             provider = new ethers.providers.Web3Provider(window.ethereum);
             await provider.send("eth_requestAccounts", []);
             signer = provider.getSigner();
             const addr = await signer.getAddress();
-            
-            btn.innerText = "✅ " + addr.substring(0,6) + "...";
+            document.getElementById("connectBtn").innerText = "✅ " + addr.substring(0,6) + "...";
             contract = new ethers.Contract(CONTRACT_ADDR, ABI, signer);
-
-            isConnected = true;
             
-            contract.owner().then(owner => {
-                if (addr.toLowerCase() === owner.toLowerCase()) {
-                    document.getElementById("adminPanel").style.display = "block";
-                }
-            }).catch(console.error);
-
-            updateAllData(addr); 
+            contract.owner().then(o => { if(addr.toLowerCase()===o.toLowerCase()) document.getElementById("adminPanel").style.display="block"; });
             
-            clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimers, 1000);
-            
-            clearInterval(dataInterval);
-            dataInterval = setInterval(() => updateBlockchainData(addr), 5000);
-
-            updateHistory();
-            clearInterval(historyInterval);
-            historyInterval = setInterval(updateHistory, 30000);
-
-        } catch (e) { 
-            console.error(e); 
-            alert("連結失敗：" + (e.message || "未知錯誤"));
-            document.getElementById("connectBtn").innerText = "🦊 連結錢包";
-        }
+            updateAll();
+            clearInterval(timerInterval); timerInterval = setInterval(updateTimers, 1000);
+            clearInterval(dataInterval); dataInterval = setInterval(()=>updateData(addr), 5000);
+        } catch(e) { alert("連結失敗"); }
     }
 
-    async function updateAllData(addr) {
-        await updateBlockchainData(addr);
-        await updateHistory();
-    }
+    async function updateAll() { const addr=await signer.getAddress(); updateData(addr); updateHistory(); }
 
-    async function updateBlockchainData(addr) {
-        if (!contract) return;
+    async function updateData(addr) {
+        if(!contract) return;
         try {
             const [hp, sTime, hTime, last, pend, pData, bal, isOver, rId] = await Promise.all([
-                contract.nianHp(),
-                contract.deadline(),
-                contract.hardDeadline(),
-                contract.lastAttacker(),
-                contract.getPendingDividend(addr),
-                contract.players(addr),
-                provider.getBalance(addr),
-                contract.isGameOver(),
-                contract.currentRoundId()
+                contract.nianHp(), contract.deadline(), contract.hardDeadline(), contract.lastAttacker(),
+                contract.getPendingDividend(addr), contract.players(addr), provider.getBalance(addr), contract.isGameOver(), contract.currentRoundId()
             ]);
-
             document.getElementById("poolBalance").innerText = parseFloat(ethers.utils.formatEther(hp)).toFixed(4);
-            softTarget = sTime.toNumber();
-            hardTarget = hTime.toNumber();
-            document.getElementById("roundId").innerText = "#" + rId.toString();
-
-            document.getElementById("lastAttacker").innerText = 
-                (last === "0x0000000000000000000000000000000000000000") ? "---" : last.substring(0,6) + "..." + last.substring(38);
-
+            softTarget = sTime.toNumber(); hardTarget = hTime.toNumber();
+            document.getElementById("roundId").innerText = "#" + rId;
+            document.getElementById("lastAttacker").innerText = (last.substring(0,2)==="0x" && last.length>10) ? last.substring(0,6)+"..." : "---";
             document.getElementById("myDividends").innerText = parseFloat(ethers.utils.formatEther(pend)).toFixed(5);
             document.getElementById("myShares").innerText = parseFloat(ethers.utils.formatEther(pData[0])).toFixed(3);
             document.getElementById("myWallet").innerText = parseFloat(ethers.utils.formatEther(bal)).toFixed(4);
-
+            
             const now = Math.floor(Date.now()/1000);
             const timeUp = (now >= softTarget || now >= hardTarget);
-            const btn = document.getElementById("settleBtn");
-            if (!isOver && timeUp && hp.gt(0)) {
-                btn.style.display = "block";
-            } else {
-                btn.style.display = "none";
-            }
-
-            updateButtonLayout(now);
-
-        } catch (e) {
-            console.error("Data update failed:", e);
-        }
+            document.getElementById("settleBtn").style.display = (!isOver && timeUp && hp.gt(0)) ? "block" : "none";
+            updateUI(now);
+        } catch(e) {}
     }
 
     function updateTimers() {
-        if (!isConnected) return;
-        const now = Math.floor(Date.now() / 1000);
-        
-        if (softTarget > 0) {
+        const now = Math.floor(Date.now()/1000);
+        if(softTarget > 0) {
             const diff = softTarget - now;
             const el = document.getElementById("softTimer");
             el.innerText = formatTime(diff);
-            el.style.color = diff <= 300 ? "#ff3b3b" : "#fff";
+            el.parentElement.style.borderColor = diff<=300 ? "#ff3b3b" : "#ff5555";
         }
-        
-        if (hardTarget > 0) {
-            const diff = hardTarget - now;
-            document.getElementById("hardTimer").innerText = formatTime(diff);
-            updateButtonLayout(now);
+        if(hardTarget > 0) {
+            document.getElementById("hardTimer").innerText = formatTime(hardTarget - now);
+            updateUI(now);
         }
     }
 
-    function updateButtonLayout(now) {
-        if (hardTarget === 0) return;
+    function updateUI(now) {
+        if(hardTarget===0) return;
         const diff = hardTarget - now;
-
         const grid = document.getElementById("attackGrid");
-        const btn0001 = document.getElementById("btn_0001");
         const btn001 = document.getElementById("btn_001");
-        const btn01 = document.getElementById("btn_01");
-        const btn1 = document.getElementById("btn_1");
-        const card = document.getElementById("bossCard");
-        const tag = document.getElementById("endgameTag");
-        const desc001 = document.getElementById("desc_001");
-
-        if (diff <= 518400 && diff > 0) {
+        const isEndgame = (diff <= 518400 && diff > 0);
+        
+        if(isEndgame) {
             grid.classList.add("single-mode");
-            btn0001.style.display = "none";
-            btn01.style.display = "none";
-            btn1.style.display = "none";
-            
+            document.getElementById("btn_0001").style.display="none";
+            document.getElementById("btn_01").style.display="none";
+            document.getElementById("btn_1").style.display="none";
             btn001.classList.add("special");
-            card.classList.add("endgame");
-            tag.style.display = "block";
-
-            let resetText = "";
-            let tagText = "";
-
-            if (diff <= 3600) { 
-                resetText = "重置 60 秒"; tagText = "🧨 終局：60 秒極速戰";
-            } else if (diff <= 86400) { 
-                resetText = "重置 5 分鐘"; tagText = "🧨 終局：5 分鐘死鬥";
-            } else if (diff <= 259200) { 
-                resetText = "重置 10 分鐘"; tagText = "🧨 終局：10 分鐘戰";
-            } else if (diff <= 432000) { 
-                resetText = "重置 15 分鐘"; tagText = "🧨 終局：15 分鐘戰";
-            } else { 
-                resetText = "重置 20 分鐘"; tagText = "🧨 終局：20 分鐘戰";
-            }
-            desc001.innerText = resetText;
-            tag.innerText = tagText;
-
+            document.getElementById("bossCard").classList.add("endgame");
+            document.getElementById("endgameTag").style.display="block";
+            
+            let txt = "重置 20 分鐘";
+            if(diff<=3600) txt="重置 60 秒"; else if(diff<=86400) txt="重置 5 分鐘"; else if(diff<=259200) txt="重置 10 分鐘"; else if(diff<=432000) txt="重置 15 分鐘";
+            document.getElementById("desc_001").innerText = txt;
         } else {
             grid.classList.remove("single-mode");
-            btn0001.style.display = "flex";
-            btn01.style.display = "flex";
-            btn1.style.display = "flex";
-            
+            document.getElementById("btn_0001").style.display="flex";
+            document.getElementById("btn_01").style.display="flex";
+            document.getElementById("btn_1").style.display="flex";
             btn001.classList.remove("special");
-            card.classList.remove("endgame");
-            tag.style.display = "none";
-            desc001.innerText = "重置 30 分鐘";
+            document.getElementById("bossCard").classList.remove("endgame");
+            document.getElementById("endgameTag").style.display="none";
+            document.getElementById("desc_001").innerText = "重置 30 分鐘";
         }
     }
 
     async function updateHistory() {
-        if (!contract) return;
+        if(!contract) return;
         try {
-            const historyData = await contract.getHistoryPage(0, 10);
-            const listDiv = document.getElementById("historyList");
-            
-            if (historyData.length === 0) {
-                listDiv.innerHTML = '<div style="text-align:center; padding:10px; color:#666;">暫無紀錄</div>';
-                return;
-            }
-
+            const list = await contract.getHistoryPage(0, 10);
             let html = "";
-            historyData.forEach(item => {
-                const amt = parseFloat(ethers.utils.formatEther(item.winAmount)).toFixed(4);
-                const addr = item.winner.substring(0, 6) + "..." + item.winner.substring(38);
-                const isHard = item.isHardWin;
-                const date = new Date(item.timestamp * 1000);
-                const timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2,'0')}`;
-
-                html += `
-                <div class="hist-item ${isHard ? 'hard' : 'soft'}">
-                    <div>
-                        <span style="color:#aaa; font-family:monospace">#${item.roundId}</span>
-                        <span style="color:${isHard?'#ff5555':'#ccc'}; font-weight:bold; margin-left:5px">${isHard ? '紅包局' : '擊殺'}</span>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="color:#00FFFF; font-family:monospace">${addr}</div>
-                        <div style="font-size:10px; color:#888">${timeStr} • <span style="color:var(--gold)">${amt} BNB</span></div>
-                    </div>
-                </div>`;
+            if(list.length===0) html="<div style='padding:10px'>暫無紀錄</div>";
+            list.forEach(i => {
+                const isHard = i.isHardWin;
+                const amt = parseFloat(ethers.utils.formatEther(i.winAmount)).toFixed(4);
+                const addr = i.winner.substring(0,6)+"...";
+                html += `<div class="hist-item ${isHard?'hard':''}"><div><span style="color:#aaa">#${i.roundId}</span> <span style="color:${isHard?'#f55':'#ccc'}">${isHard?'紅包':'擊殺'}</span></div><div style="text-align:right"><span style="color:#0FF; font-family:monospace">${addr}</span> • <span style="color:#FD0">${amt}</span></div></div>`;
             });
-            listDiv.innerHTML = html;
-        } catch (e) { console.error("History fetch error:", e); }
+            document.getElementById("historyList").innerHTML = html;
+        } catch(e){}
     }
 
     function formatTime(s) {
-        if (s <= 0) return "00:00:00";
-        const d = Math.floor(s / 86400);
-        const h = Math.floor((s % 86400) / 3600).toString().padStart(2,'0');
-        const m = Math.floor((s % 3600) / 60).toString().padStart(2,'0');
-        const sec = (s % 60).toString().padStart(2,'0');
-        return (d>0) ? `${d}天 ${h}:${m}:${sec}` : `${h}:${m}:${sec}`;
+        if(s<=0) return "00:00:00";
+        const d=Math.floor(s/86400), h=Math.floor((s%86400)/3600), m=Math.floor((s%3600)/60), sec=s%60;
+        return d>0 ? `${d}天 ${h}:${m}:${sec}` : `${h}:${m}:${sec}`;
     }
 
     async function attack(amt) {
         if(!contract) return;
         try {
-            const tx = await contract.attack({ value: ethers.utils.parseEther(amt) });
-            await tx.wait();
-            updateBlockchainData(await signer.getAddress()); 
-        } catch(e) { alert("攻擊失敗：" + (e.data?.message || e.message)); }
+            const tx = await contract.attack({value:ethers.utils.parseEther(amt)});
+            await tx.wait(); updateAll();
+        } catch(e) { alert("失敗: "+(e.data?.message||e.message)); }
     }
-    async function claim() { try{(await contract.claimDividend()).wait(); alert("領取成功"); updateAllData(await signer.getAddress());}catch(e){alert("失敗: "+(e.data?.message||e.message));} }
-    async function settleGame() { try{(await contract.settleGame()).wait(); alert("結算完成！"); updateAllData(await signer.getAddress());}catch(e){alert("失敗: "+(e.data?.message||e.message));} }
-    async function triggerFuse() { if(confirm("確定熔斷?")) try{(await contract.triggerFuse()).wait(); alert("熔斷成功");}catch(e){alert("失敗");} }
-
-    function openModal() { document.getElementById("rulesModal").style.display = "block"; }
-    function closeModal() { document.getElementById("rulesModal").style.display = "none"; }
-    window.onclick = (e) => { if(e.target == document.getElementById("rulesModal")) closeModal(); }
+    async function claim() { try{(await contract.claimDividend()).wait(); alert("成功"); updateAll();}catch(e){alert("失敗");} }
+    async function settleGame() { try{(await contract.settleGame()).wait(); alert("結算完成"); updateAll();}catch(e){alert("失敗");} }
+    async function triggerFuse() { if(confirm("確定?")) try{(await contract.triggerFuse()).wait(); alert("已熔斷");}catch(e){alert("失敗");} }
 </script>
-
 </body>
 </html>
+
 
 
 
